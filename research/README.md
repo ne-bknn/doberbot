@@ -3,3 +3,6 @@
 - TLSH
 - Ssdeep
 - Sdhash
+
+## Loaders
+[Colab notebook](https://colab.research.google.com/drive/1AYFpG-BngYTowoRiSTrCXlSHTvk793x2?usp=sharing)
