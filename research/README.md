@@ -1,8 +1,8 @@
-## [Locality-sensitive hashing](https://en.wikipedia.org/wiki/Locality-sensitive_hashing)
+### [Locality-sensitive hashing](https://en.wikipedia.org/wiki/Locality-sensitive_hashing)
 - [Nilsimsa](https://en.wikipedia.org/wiki/Nilsimsa_Hash)
 - TLSH
 - Ssdeep
 - Sdhash
 
-## Loaders
+### Loaders
 [Colab notebook](https://colab.research.google.com/drive/1AYFpG-BngYTowoRiSTrCXlSHTvk793x2?usp=sharing)

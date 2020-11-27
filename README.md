@@ -4,8 +4,11 @@ http clusterization and vizualization tool
 In progress
 
 `loaders.py` - loader interface and implementations for pcaps and Packmate's Postgres
+
 `analyzer` - analyzer module that does the heavy lifting
-`research` - colab notebooks with r&d details 
+
+`research` - colab notebooks with r&d details
+
 `app.py` - web app that renders the space
 
 The idea:
