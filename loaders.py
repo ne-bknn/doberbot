@@ -1,62 +1,79 @@
-import scapy
-import scapy.all as scapy_all
-from scapy.layers import http
+import subprocess
+import json
+from collections import defaultdict, MutableSequence
 
-class AbstractLoader():
-    """ Specification of Loader interface """
-    def __init__(self):
-        """ Class constructor should get all the data needed to
-        pull the streams and create list of conversations
-        """
 
-    def __iter__(self):
-        """ Should return a packet per iteration """
+class HTTPPacket():
+    def __init__(self, http, tcp_seq, ip_src, ip_dst):
+        self.http = http
+        self.tcp_seq = tcp_seq
+        self.ip_src = ip_src
+        self.ip_dst = ip_dst
+        if 'http.request' in self.http.keys():
+            self.type = 'REQ'
+        if 'http.response' in self.http.keys():
+            self.type = 'RESP'
 
-class PcapLoader(AbstractLoader):
-    """ Loader that uses pcap files """
-    def __init__(self, filename, port):
-        """ For details about this solution see scapy_test.ipynb in research """
-        scapy_all.bind_layers(scapy_all.TCP, http.HTTP, sport=port)
-        scapy_all.bind_layers(scapy_all.TCP, http.HTTP, dport=port)
+    def __str__(self):
+        return f"<HTTP TCPSQ:{self.tcp_seq} {self.type}>"
 
-        pcap = scapy.utils.rdpcap(filename)
 
-        sessions = pcap.sessions(self.full_duplex)
-
-        self.conversations = []
-        for session in sessions.keys():
-            conversation = []
-            for packet in sessions[session]:
-                if http.HTTPRequest in packet:
-                    conversation.append(packet.lastlayer())
-
-                if http.HTTPResponse in packet:
-                    conversation.append(packet.lastlayer())
-
-            if len(conversation) != 0:
-                self.conversations.append(conversation)
+class PacketList(MutableSequence):
+    def __init__(self, initial=None):
+        if initial is None:
+            self._inner_list = list()
+        else:
+            self._inner_list = list(initial)
 
     def __len__(self):
-        return len(self.conversations)
+        return len(self._inner_list)
 
-    @staticmethod
-    def full_duplex(p):
-        sess = "Other"
-        if 'Ether' in p:
-            if 'IP' in p:
-                if 'TCP' in p:
-                    sess = str(sorted(["TCP", p[scapy_all.IP].src, p[scapy_all.TCP].sport, p[scapy_all.IP].dst, p[scapy_all.TCP].dport], key=str))
-                elif 'UDP' in p:
-                    sess = str(sorted(["UDP", p[scapy_all.IP].src, p[scapy_all.UDP].sport, p[scapy_all.IP].dst, p[scapy_all.UDP].dport], key=str))
-                elif 'ICMP' in p:
-                    sess = str(sorted(["ICMP", p[scapy_all.IP].src, p[scapy_all.IP].dst, p[scapy_all.ICMP].code, p[scapy_all.ICMP].type, p[scapy_all.ICMP].id], key=str))
-                else:
-                    sess = str(sorted(["IP", p[scapy_all.IP].src, p[scapy_all.IP].dst, p[scapy_all.IP].proto], key=str))
-            elif 'ARP' in p:
-                sess = str(sorted(["ARP", p[scapy_all.ARP].psrc, p[scapy_all.ARP].pdst], key=str))
-            else:
-                sess = p.sprintf("Ethernet type=%04xr,Ether.type%")
-        return sess
+    def __delitem__(self, index):
+        self._innder_list.__delitem__(index)
+
+    def insert(self, index, value):
+        self._inner_list.insert(index, value)
+
+    def __setitem__(self, index, value):
+        self._inner_list.__setitem__(index, value)
+
+    def __getitem__(self, index):
+        return self._inner_list.__getitem__(index)
+
+    def __str__(self):
+        if len(self._inner_list) > 0:
+            if isinstance(self._inner_list[0], list):
+                sessions = []
+                for session in self._inner_list:
+                    sessions.append('['+", ".join([str(p) for p in session])+']')
+                return 'PacketList['+", ".join([str(session) for session in sessions])+']'
+        else:
+            return '[]'
+
+    def sessionize(self):
+        temp_sessions = defaultdict(list)
+        for packet in self._inner_list:
+            temp_sessions[packet.tcp_seq].append(packet)
+
+        sessions = list(temp_sessions.values())
+        self._inner_list = sessions
+
+
+class PcapLoader():
+    """ Loader that uses pcap files """
+    def __init__(self, filename):
+        pcap = subprocess.run(["tshark", "-r", filename, "-Y", "http", "-T", "json"], check=False, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL).stdout
+        pcap = json.loads(pcap.decode())
+        self.packets = PacketList()
+        for packet in pcap:
+            tcp_seq = int(packet['_source']['layers']['tcp']['tcp.stream'])
+            ip_dst = packet['_source']['layers']['ip']['ip.dst']
+            ip_src = packet['_source']['layers']['ip']['ip.src']
+            http = packet['_source']['layers']['http']
+            new_packet = HTTPPacket(http, tcp_seq, ip_src, ip_dst)
+            self.packets.append(new_packet)
+
+        self.packets.sessionize()
 
     def get_conversations(self):
-        return self.conversations
+        return self.packets
