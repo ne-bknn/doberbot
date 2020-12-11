@@ -135,9 +135,13 @@ class PacketList(MutableSequence):
             for packet in session:
                 if packet.http["type"] == "REQ":
                     for k, v in packet.http.items():
+                        if k == "type":
+                            continue
                         tempdict[f"req_{k}"] = v
                 elif packet.http["type"] == "RESP":
                     for k, v in packet.http.items():
+                        if k == "type":
+                            continue
                         tempdict[f"resp_{k}"] = v
                 else:
                     raise ValueError("Invalid packet type!")
