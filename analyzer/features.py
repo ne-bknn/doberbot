@@ -59,6 +59,7 @@ def create_features(df):
         df[column_name] = pd.to_numeric(df[column_name])
 
     df["req_payload_length"] = df["req_payload_length"].fillna(0)
+    df["resp_header_length"] = df["resp_header_length"].fillna(0)
 
     for column_name in NORMALIZE_FIELDS:
         normalize(df, column_name)
