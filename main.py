@@ -3,9 +3,14 @@ from analyzer import create_features
 from analyzer import tsne_transformer
 from analyzer import debug_view
 
-p = PcapLoader("pcaps/stored_xss.pcapng")
-convs = p.get_conversations()
-d = convs.to_pandas()
-d1 = create_features(d.copy())
-d2 = tsne_transformer(d1)
-debug_view(d2)
+def main():
+    p = PcapLoader("pcaps/stored_xss.pcapng")
+    convs = p.get_conversations()
+    dataframe, texts = convs.to_pandas()
+    dataframe1 = create_features(dataframe.copy())
+    embedded = tsne_transformer(dataframe1)
+    return embedded, texts
+
+if __name__ == "__main__":
+    df, texts = main()
+    debug_view(df)

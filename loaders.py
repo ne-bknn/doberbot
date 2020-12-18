@@ -4,9 +4,12 @@ from collections import defaultdict, MutableSequence
 import pandas as pd
 import logging
 
+from typing import Tuple
+
+logging.basicConfig(level=logging.WARNING)
 
 class HTTPPacket:
-    def __init__(self, http, tcp_seq, ip_src, ip_dst):
+    def __init__(self, http, tcp_seq, ip_src, ip_dst, tcp_data):
         self.sessionized = False
         new_http = defaultdict(str)
         for k, v in http.items():
@@ -16,6 +19,7 @@ class HTTPPacket:
         self.tcp_seq = tcp_seq
         self.ip_src = ip_src
         self.ip_dst = ip_dst
+        self.tcp_data = bytes.fromhex(tcp_data.replace(":", "")).decode()
         self.http = {}
         if "http.request" in http.keys():
             self.http["type"] = "REQ"
@@ -23,31 +27,15 @@ class HTTPPacket:
                 if isinstance(http[k], dict):
                     if "_ws.expert" in http[k].keys():
                         self.http["method"] = http[k]["http.request.method"]
-                        if self.http["method"] == "":
-                            logging.warning('Blank at {self.http["method"]}')
                         self.http["uri"] = http[k]["http.request.uri"]
-                        if self.http["uri"] == "":
-                            logging.warning('Blank at {self.http["uri"]}')
                         self.http["version"] = http[k]["http.request.version"]
-                        if self.http["version"] == "":
-                            logging.warning('Blank at {self.http["version"]}')
                         break
 
             self.http["host"] = http["http.host"]
-            if self.http["host"] == "":
-                logging.warning('Blank at {self.http["host"]}')
             self.http["ua"] = http["http.user_agent"]
-            if self.http["ua"] == "":
-                logging.warning('Blank at {self.http["ua"]}')
             self.http["accept_enc"] = http["http.accept_encoding"]
-            if self.http["accept_enc"] == "":
-                logging.warning('Blank at {self.http["accept_enc"]}')
             self.http["payload_length"] = http["http.content_length_header"]
-            if self.http["payload_length"] == "":
-                logging.debug('Blank at {self.http["payload_length"]}')
             self.http["data"] = http["http.file_data"]
-            if self.http["data"] == "":
-                logging.debug('Blank at {self.http["data"]}')
 
         elif "http.response" in http.keys():
             self.http["type"] = "RESP"
@@ -55,25 +43,14 @@ class HTTPPacket:
                 if isinstance(http[k], dict):
                     if "_ws.expert" in http[k].keys():
                         self.http["version"] = http[k]["http.response.version"]
-                        if self.http["version"] == "":
-                            logging.warning('Blank at {self.http["version"]}')
                         self.http["code"] = http[k]["http.response.code"]
-                        if self.http["code"] == "":
-                            logging.warning('Blank at {self.http["code"]}')
                         break
 
             self.http["header_length"] = http["http.content_length_header"]
-            if self.http["header_length"] == "":
-                logging.warning('Blank at {self.http["header_length"]}')
             self.http["server"] = http["http.server"]
-            if self.http["server"] == "":
-                logging.warning('Blank at {self.http["server"]}')
             self.http["data"] = http["http.file_data"]
-            if self.http["data"] == "":
-                logging.warning('Blank at {self.http["data"]}')
         else:
             raise ValueError("Could not determine packet type!")
-
 
     def __str__(self):
         return f"<HTTP TCPSQ:{self.tcp_seq} {self.http['type']}>"
@@ -124,15 +101,18 @@ class PacketList(MutableSequence):
         sessions = list(temp_sessions.values())
         self._inner_list = sessions
 
-    def to_pandas(self):
+    def to_pandas(self) -> Tuple[pd.DataFrame, list]:
         if not self.sessionized:
             raise ValueError(
                 "PacketList must be sessionized before conversion to pandas!"
             )
         convlist = []
+        texts = []
         for session in self._inner_list:
             tempdict = {}
+            templist = []
             for packet in session:
+                templist.append(packet.tcp_data)
                 if packet.http["type"] == "REQ":
                     for k, v in packet.http.items():
                         if k == "type":
@@ -146,9 +126,10 @@ class PacketList(MutableSequence):
                 else:
                     raise ValueError("Invalid packet type!")
             convlist.append(tempdict)
+            texts.append(templist)
 
         df = pd.DataFrame(convlist)
-        return df
+        return df, texts
 
 
 class PcapLoader:
@@ -168,7 +149,15 @@ class PcapLoader:
             ip_dst = packet["_source"]["layers"]["ip"]["ip.dst"]
             ip_src = packet["_source"]["layers"]["ip"]["ip.src"]
             http = packet["_source"]["layers"]["http"]
-            new_packet = HTTPPacket(http, tcp_seq, ip_src, ip_dst)
+            try:
+                tcp_data = packet["_source"]["layers"]["tcp.segments"]["tcp.reassembled.data"]
+                logging.debug("Found reassembled.data")
+            except KeyError:
+                logging.debug("Could not find reassembled data, defaulting to tcp.payload")
+                logging.debug(f"Available tcp fields: {packet['_source']['layers']['tcp'].keys()}")
+                tcp_data = packet["_source"]["layers"]["tcp"]["tcp.payload"]
+
+            new_packet = HTTPPacket(http, tcp_seq, ip_src, ip_dst, tcp_data)
             self.packets.append(new_packet)
 
         self.packets.sessionize()

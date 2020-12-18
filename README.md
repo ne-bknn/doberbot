@@ -2,7 +2,7 @@
 http clusterization and vizualization tool
 
 Usage:
-To view demo, do `python main.py`.
+To view demo, do `python app.py`.
 
 Architecture:
 
@@ -33,3 +33,15 @@ Upd.: Done, doesn't help.
 Upd.: Currently do not know how to implement.
 3. More features should be engineered from texts
 4. Improve interface (ideal solution - web-app with interactive plots)
+
+## Iteration 2:
+1. Features are normalized
+2. t-SNE reduces dimensiality down to 3
+3. 3D-viewer based on Dash
+
+Current problems and todos:
+The results are still incomprehensible; moreover, they are non-reproducible. Some todos are from previous iteration:
+1. Filter out garbage features.
+2. Mine HTTP packets for more features.
+3. Web interface is much better than sns plots, still not very fun to use. Should work on usability.
+4. Maybe PCA instead of t-SNE? It is at least somehow interpretable and reproducible.
