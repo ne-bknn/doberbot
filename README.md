@@ -16,7 +16,7 @@ Architecture:
 1. Load streams from given data source
 2. Extract features, prepare them a bit: LSH arguments and cluster 'em, hash user agents, some ad-hoc engineering (like specify presense of potentially malicious charachters in parameters)
 3. Put given stream in a space defined by extracted features
-4. Reduce dimensions down to 2 (t-SNE or PCA)
+4. Reduce dimensions down to 2/3 (t-SNE or PCA)
 5. Render the resulting space 
 
 ## Iteration 1:
