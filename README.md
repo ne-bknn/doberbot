@@ -42,7 +42,8 @@ Upd.: Currently do not know how to implement.
 Current problems and todos:
 The results are still incomprehensible; moreover, they are non-reproducible. Some todos are from previous iteration:
 1. Filter out garbage features.
-2. Mine HTTP packets for more features.
+2. Mine HTTP packets for more features. Fourth iteration may introduce seq2seq approach for generating feature vector, but research is needed. 
 3. Web interface is much better than sns plots, still not very fun to use. Should work on usability.
-4. Maybe PCA instead of t-SNE? It is at least somehow interpretable and reproducible.
-5. Should refactor the code in third iteration, it is already messy.
+4. Testing on new datasets; the only pcap I was testing on is a bit specific. Something like API calls may be handled better. And loader should be made more robust. 
+5. Maybe PCA instead of t-SNE? It is at least somehow interpretable and reproducible.
+6. Should refactor the code in third iteration, it is already messy.
