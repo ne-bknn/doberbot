@@ -45,3 +45,4 @@ The results are still incomprehensible; moreover, they are non-reproducible. Som
 2. Mine HTTP packets for more features.
 3. Web interface is much better than sns plots, still not very fun to use. Should work on usability.
 4. Maybe PCA instead of t-SNE? It is at least somehow interpretable and reproducible.
+5. Should refactor the code in third iteration, it is already messy.
