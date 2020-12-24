@@ -2,7 +2,11 @@
 http clusterization and vizualization tool
 
 Usage:
-To view demo, do `python app.py`.
+To view demo, do 
+```bash
+pip install -r requirements.txt
+python app.py
+```
 
 Architecture:
 
