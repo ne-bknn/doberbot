@@ -8,6 +8,8 @@ pip install -r requirements.txt
 python app.py
 ```
 
+![interface demo](https://raw.githubusercontent.com/ne-bknn/doberbot/main/image.png)
+
 Architecture:
 
 `loaders.py` - loader interface and implementations for pcaps (Packmate's Postgres should be implemented, too)
